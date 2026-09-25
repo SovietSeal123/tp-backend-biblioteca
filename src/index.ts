@@ -25,12 +25,15 @@ interface IBook {
     stock: number
 }
 
+const args = process.argv.splice(2)
+const action = args[0]
+
 const createBook = async (title: string, author: string, price: number, stock: number) => {
    const newBook = {title, author, price, stock}
    return await bookCollection.insertOne(newBook)
 }
 
-const readBook = async () => {
+const readBooks = async () => {
     const books = await bookCollection.find().toArray()
     return books
 }
@@ -48,3 +51,92 @@ const deleteBook = async (id: string) =>  {
 }
 
 await connectDb()
+
+switch (action) {
+    case "info":
+        console.log(`
+            Comandos disponibles:
+            read = obtener todos los libros
+            create = crear un libro
+            update id = actualizar un libro
+            delete id = eliminar un libro
+        `)
+        process.exit(0)
+
+    case "read":
+        console.log(await readBooks())
+        process.exit(0)
+
+    case "create":
+    const title = args[1]
+    const author = args[2]
+    const price = Number(args[3])
+    const stock = Number(args[4])
+
+    if (title === undefined || author === undefined || args[3] === undefined || args[4] === undefined) {
+        console.log("Faltan datos")
+        process.exit(1)
+    }
+
+    if (isNaN(price) || isNaN(stock)) {
+    console.log("El precio y stock deben ser números")
+    process.exit(1)
+    }
+
+    console.log(await createBook(title, author, price, stock))
+    process.exit(0)
+
+    case "update":
+    const idUpdate = args[1]
+    const titleUpdate = args[2]
+    const authorUpdate = args[3]
+    const priceUpdate = Number(args[4])
+    const stockUpdate = Number(args[5])
+
+    if (idUpdate === undefined || titleUpdate === undefined || authorUpdate === undefined || args[4] === undefined || args[5] === undefined) {
+        console.log("Faltan datos")
+        process.exit(1)
+    }
+
+    if (isNaN(priceUpdate) || isNaN(stockUpdate)) {
+    console.log("El precio y stock deben ser números")
+    process.exit(1)
+    }
+
+    const data: IBook = {
+        title: titleUpdate,
+        author: authorUpdate,
+        price: priceUpdate,
+        stock: stockUpdate
+    }
+
+    console.log(await updateBook(idUpdate, data))
+    process.exit(0)
+
+    case "delete":
+    const idDelete = args[1]
+
+    if (idDelete === undefined) {
+        console.log("Debes proporcionar un ID")
+        process.exit(1)
+    }
+
+    const result = await deleteBook(idDelete)
+
+    if (result.deletedCount === 1) {
+        console.log("Libro eliminado correctamente")
+    } else {
+        console.log("No se encontró un libro con ese ID")
+    }
+
+    process.exit(0)
+    
+    default:
+        console.log(`
+            Comandos no reconocido. Los comandos disponibles son:
+            read = obtener todos los libros
+            create = crear un libro
+            update id = actualizar un libro
+            delete id = eliminar un libro
+        `)
+}
