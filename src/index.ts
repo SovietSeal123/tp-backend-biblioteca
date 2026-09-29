@@ -12,7 +12,7 @@ const connectDb = async () => {
     try {
         await cliente.connect()
         console.log(`conectado a MongoDb`)
-    } catch(e){
+    } catch{
         console.log(`Error al conectar a MongoDb`)
         process.exit(1)
     }
@@ -30,12 +30,11 @@ const action = args[0]
 
 const createBook = async (title: string, author: string, price: number, stock: number) => {
    const newBook = {title, author, price, stock}
-   return await bookCollection.insertOne(newBook)
+   return bookCollection.insertOne(newBook)
 }
 
 const readBooks = async () => {
-    const books = await bookCollection.find().toArray()
-    return books
+    return bookCollection.find().toArray()
 }
 
 const updateBook = async (id: string, data: IBook) =>  {
@@ -50,6 +49,7 @@ const deleteBook = async (id: string) =>  {
     return await bookCollection.deleteOne({_id: objectId})
 }
 
+
 await connectDb()
 
 switch (action) {
@@ -61,11 +61,11 @@ switch (action) {
             update id = actualizar un libro
             delete id = eliminar un libro
         `)
-        process.exit(0)
+        break
 
     case "read":
         console.log(await readBooks())
-        process.exit(0)
+        break
 
     case "create":
     const title = args[1]
@@ -84,7 +84,7 @@ switch (action) {
     }
 
     console.log(await createBook(title, author, price, stock))
-    process.exit(0)
+    break
 
     case "update":
     const idUpdate = args[1]
@@ -103,6 +103,11 @@ switch (action) {
     process.exit(1)
     }
 
+    if (!ObjectId.isValid(idUpdate)) {
+    console.log("El ID proporcionado no es válido")
+    process.exit(1)
+}
+
     const data: IBook = {
         title: titleUpdate,
         author: authorUpdate,
@@ -111,7 +116,7 @@ switch (action) {
     }
 
     console.log(await updateBook(idUpdate, data))
-    process.exit(0)
+    break
 
     case "delete":
     const idDelete = args[1]
@@ -121,6 +126,11 @@ switch (action) {
         process.exit(1)
     }
 
+    if (!ObjectId.isValid(idDelete)) {
+    console.log("El ID proporcionado no es válido")
+    process.exit(1)
+}
+
     const result = await deleteBook(idDelete)
 
     if (result.deletedCount === 1) {
@@ -129,14 +139,17 @@ switch (action) {
         console.log("No se encontró un libro con ese ID")
     }
 
-    process.exit(0)
+    break
     
     default:
         console.log(`
             Comandos no reconocido. Los comandos disponibles son:
+            info = comandos disponibles
             read = obtener todos los libros
             create = crear un libro
             update id = actualizar un libro
             delete id = eliminar un libro
         `)
 }
+
+await cliente.close()
